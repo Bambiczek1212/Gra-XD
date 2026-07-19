@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Bambiczka Pro V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { cursor: none; }
+        #game-area { position: relative; overflow: hidden; background-size: 400% 400%; animation: gradient 15s ease infinite; }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .target { position: absolute; width: 100px; height: 100px; cursor: crosshair; border: 3px solid rgba(255,255,255,0.5); border-radius: 10px; transition: transform 0.2s; }
+        .target:hover { transform: scale(1.1); }
+        #crosshair { position: fixed; width: 40px; height: 40px; border: 2px solid yellow; border-radius: 50%; pointer-events: none; z-index: 999; }
+        .nick-anim { animation: pulse 1.5s infinite; text-shadow: 0 0 10px #fbbf24; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col items-center p-4">
+
+    <div id="crosshair"></div>
+
+    <div id="start-screen" class="bg-gray-900 p-8 rounded-2xl border border-gray-700 w-full max-w-md text-center shadow-2xl">
+        <h1 class="text-3xl font-bold mb-6 text-yellow-500">Ustawienia Areny</h1>
+        <input type="text" id="input-nick" placeholder="Twój Nick" class="w-full p-3 mb-4 rounded-lg bg-gray-800 border border-gray-600 focus:ring-2 focus:ring-yellow-500 outline-none">
+        <input type="file" id="input-image" accept="image/*" class="w-full mb-4">
+        <select id="bg-select" class="w-full p-3 mb-6 rounded-lg bg-gray-800 text-white">
+            <option value="linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)">Kosmiczny Pył</option>
+            <option value="linear-gradient(-45deg, #1a2a6c, #b21f1f, #fdbb2d)">Wulkaniczne Piekło</option>
+            <option value="linear-gradient(-45deg, #000000, #434343)">Głęboka Czerń</option>
+        </select>
+        <button onclick="initGame()" class="w-full bg-yellow-500 py-3 rounded-lg font-bold text-black hover:bg-yellow-400 transition">START</button>
+    </div>
+
+    <div id="game-screen" class="hidden w-full max-w-5xl text-center">
+        <div class="flex justify-between items-center bg-gray-900 p-4 rounded-xl mb-4 border border-gray-700">
+            <h2 id="display-nick" class="text-2xl font-bold nick-anim text-yellow-500"></h2>
+            <div class="flex gap-2">
+                <button onclick="setWeapon('karabin')" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500">Karabin</button>
+                <button onclick="setWeapon('strzelba')" class="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-500">Strzelba</button>
+                <button onclick="window.location.reload()" class="bg-gray-600 px-4 py-2 rounded-lg hover:bg-gray-500">Restart</button>
+            </div>
+        </div>
+        <div id="game-area" class="w-full h-[500px] rounded-xl border-4 border-gray-700 shadow-inner"></div>
+    </div>
+
+    <script>
+        let nick = "", imgData = "", weapon = "karabin", canShoot = true;
+        const ch = document.getElementById('crosshair');
+
+        window.addEventListener('mousemove', (e) => {
+            ch.style.left = (e.clientX - 20) + 'px';
+            ch.style.top = (e.clientY - 20) + 'px';
+        });
+
+        function initGame() {
+            nick = document.getElementById('input-nick').value || "Bambiczek";
+            const file = document.getElementById('input-image').files[0];
+            if (!file) return alert("Musisz wybrać zdjęcie!");
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imgData = e.target.result;
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                document.getElementById('game-area').style.background = document.getElementById('bg-select').value;
+                document.getElementById('display-nick').innerText = nick;
+                spawnTarget();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setWeapon(w) { weapon = w; }
+
+        function spawnTarget() {
+            const area = document.getElementById('game-area');
+            const img = document.createElement('img');
+            img.src = imgData;
+            img.className = "target";
+            img.style.left = Math.random() * (area.offsetWidth - 100) + "px";
+            img.style.top = Math.random() * (area.offsetHeight - 100) + "px";
+            img.onclick = shoot;
+            area.appendChild(img);
+            setTimeout(() => { if(img.parentElement) img.remove(); spawnTarget(); }, 1800);
+        }
+
+        function shoot() {
+            if (!canShoot) return;
+            const utter = new SpeechSynthesisUtterance(nick);
+            utter.rate = weapon === 'karabin' ? 3.0 : 0.8;
+            window.speechSynthesis.speak(utter);
+            if (weapon === 'strzelba') { canShoot = false; setTimeout(() => canShoot = true, 1200); }
+        }
+    </script>
+</body>
+</html>
+
